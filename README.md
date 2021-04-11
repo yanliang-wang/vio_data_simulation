@@ -3,7 +3,7 @@ imu和cam数据仿真，用于vio算法测试，代码有任何问题都欢迎�
 
 we also create a ros_version in ros_version branch.
 
-![demo pic](https://github.com/HeYijia/vio_data_simulation/blob/master/bin/demo.png?raw=true)
+![demo pic](./bin/demo.png)
 
 ## 坐标系
 - **B**ody frame: imu坐标系
@@ -38,3 +38,15 @@ python_tool/：文件夹里为可视化工具，draw_points.py就是动态绘制
 > timestamp (1)，cam quaternion(4)，cam position(3)，imu gyro(3)，imu acc(3)
 
 注意，由于imu和cam的存储采用的是同一个函数，所以cam也会存储一些gyro,acc这些数据，但是没用，是多余存储的。
+
+
+
+# MY README
+
+在`imu.cpp`中的`testImu`实现中值积分（积分的目的在于根据IMU的测量数据，包括角速度和线加速度，获得不同时刻IMU在world坐标系下的位置，速度，和姿态），效果非常好
+
+原来的效果如下
+
+![](./bin/Figure_2.png)
+
+![](./bin/Figure_1.png)

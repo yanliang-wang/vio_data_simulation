@@ -162,7 +162,7 @@ int main(){
 
             if(pc1(2) < 0) continue; // z必须大于０,在摄像机坐标系前方
 
-            Eigen::Vector2d obs(pc1(0)/pc1(2), pc1(1)/pc1(2)) ;
+            Eigen::Vector2d obs(pc1(0)/pc1(2), pc1(1)/pc1(2)) ; //归一化坐标
             // if( (obs(0)*460 + 255) < params.image_h && ( obs(0) * 460 + 255) > 0 &&
                    // (obs(1)*460 + 255) > 0 && ( obs(1)* 460 + 255) < params.image_w )
             {

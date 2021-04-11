@@ -33,7 +33,7 @@ Eigen::Matrix3d eulerRates2bodyRates(Eigen::Vector3d eulerAngles)
     double cp = cos(pitch); double sp = sin(pitch);
 
     Eigen::Matrix3d R;
-    R<<  1,   0,    -sp,
+    R<<  1,   0,    -sp,// 第二节课件公式(31)
             0,   cr,   sr*cp,
             0,   -sr,  cr*cp;
 
@@ -104,7 +104,7 @@ MotionData IMU::MotionModel(double t)
     Eigen::Vector3d imu_gyro = eulerRates2bodyRates(eulerAngles) * eulerAnglesRates;   //  euler rates trans to body gyro
 
     Eigen::Vector3d gn (0,0,-9.81);                                   //  gravity in navigation frame(ENU)   ENU (0,0,-9.81)  NED(0,0,9,81)
-    Eigen::Vector3d imu_acc = Rwb.transpose() * ( ddp -  gn );  //  Rbw * Rwn * gn = gs
+    Eigen::Vector3d imu_acc = Rwb.transpose() * ( ddp -  gn );  //  Rbw * Rwn * gn = gs  
 
     data.imu_gyro = imu_gyro;
     data.imu_acc = imu_acc;
@@ -136,23 +136,43 @@ void IMU::testImu(std::string src, std::string dist)
     for (int i = 1; i < imudata.size(); ++i) {
 
         MotionData imupose = imudata[i];
+        MotionData imupose_kk = imudata[i-1];
+
 
         //delta_q = [1 , 1/2 * thetax , 1/2 * theta_y, 1/2 * theta_z]
+
+
+        /// imu 动力学模型 欧拉积分
+        // Eigen::Vector3d acc_w = Qwb * (imupose.imu_acc) + gw;  // aw = Rwb * ( acc_body - acc_bias ) + gw
+        // Eigen::Vector3d gyro_w = imupose.imu_gyro;
+
+        /// 中值积分
+        Eigen::Vector3d dtheta_half_tmp =  imupose.imu_gyro * dt /2.0;
+        Eigen::Quaterniond Qwb_tmp, dp_tmp;
+        dp_tmp.w() = 1;
+        dp_tmp.x() = dtheta_half_tmp.x();
+        dp_tmp.y() = dtheta_half_tmp.y();
+        dp_tmp.z() = dtheta_half_tmp.z();
+        dp_tmp.normalize();
+        Qwb_tmp = Qwb*dp_tmp;                     // k 时刻 quaterniond的预计值
+        Eigen::Vector3d acc_w = 0.5*(Qwb * (imupose_kk.imu_acc) + gw + Qwb_tmp * (imupose.imu_acc) + gw) ;  // aw = 0.5*(Rwb_kk * ( acc_body_kk - acc_bias_kk ) + gw + Rwb * ( acc_body - acc_bias ) + gw) 
+        Eigen::Vector3d gyro_w = 0.5 *(imupose.imu_gyro + imupose_kk.imu_gyro);
+
+
+
+        Eigen::Vector3d dtheta_half =  gyro_w * dt /2.0;
         Eigen::Quaterniond dq;
-        Eigen::Vector3d dtheta_half =  imupose.imu_gyro * dt /2.0;
         dq.w() = 1;
         dq.x() = dtheta_half.x();
         dq.y() = dtheta_half.y();
         dq.z() = dtheta_half.z();
         dq.normalize();
-        
-        /// imu 动力学模型 欧拉积分
-        Eigen::Vector3d acc_w = Qwb * (imupose.imu_acc) + gw;  // aw = Rwb * ( acc_body - acc_bias ) + gw
         Qwb = Qwb * dq;
         Pwb = Pwb + Vw * dt + 0.5 * dt * dt * acc_w;
         Vw = Vw + acc_w * dt;
         
-        /// 中值积分
+        
+        
 
         //　按着imu postion, imu quaternion , cam postion, cam quaternion 的格式存储，由于没有cam，所以imu存了两次
         save_points<<imupose.timestamp<<" "
