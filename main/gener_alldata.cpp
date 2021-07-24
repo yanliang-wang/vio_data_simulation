@@ -15,7 +15,7 @@ using Lines = std::vector<Line, Eigen::aligned_allocator<Line> >;
 void CreatePointsLines(Points& points, Lines& lines)
 {
     std::ifstream f;
-    f.open("house_model/house.txt");
+    f.open("house_model/house.txt");    /*文件中每一个行有6个数，代表一个line，前三个为line的起点，后三个为line的终点*/
 
     while(!f.eof())
     {

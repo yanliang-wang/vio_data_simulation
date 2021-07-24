@@ -43,6 +43,10 @@ python_tool/：文件夹里为可视化工具，draw_points.py就是动态绘制
 
 # MY README
 
+## 说明
+
+`gener_alldata.cpp`文件根据一些参数来仿真IMU的数据，并根据这些数据进行中值积分，得到IMU的odom。
+
 在`imu.cpp`中的`testImu`实现中值积分（积分的目的在于根据IMU的测量数据，包括角速度和线加速度，获得不同时刻IMU在world坐标系下的位置，速度，和姿态），效果非常好
 
 原来的效果如下

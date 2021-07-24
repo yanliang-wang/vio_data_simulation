@@ -16,15 +16,15 @@ struct MotionData
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     double timestamp;
-    Eigen::Matrix3d Rwb;
-    Eigen::Vector3d twb;
-    Eigen::Vector3d imu_acc;
-    Eigen::Vector3d imu_gyro;
+    Eigen::Matrix3d Rwb;            // 姿态（应该是角速度积分得到的）
+    Eigen::Vector3d twb;            // 位置（应该是加速度积分得到的）
+    Eigen::Vector3d imu_acc;        // 线加速度
+    Eigen::Vector3d imu_gyro;       // 角速度
 
-    Eigen::Vector3d imu_gyro_bias;
-    Eigen::Vector3d imu_acc_bias;
+    Eigen::Vector3d imu_gyro_bias;  // 陀螺仪bias
+    Eigen::Vector3d imu_acc_bias;   // 加速度计bias
 
-    Eigen::Vector3d imu_velocity;
+    Eigen::Vector3d imu_velocity;   // 速度（应该是积分得到的）
 };
 
 // euler2Rotation:   body frame to interitail frame

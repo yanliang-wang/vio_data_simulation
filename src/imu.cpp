@@ -63,16 +63,21 @@ void IMU::addIMUnoise(MotionData& data)
 
     // gyro_bias update
     Eigen::Vector3d noise_gyro_bias(noise(generator_),noise(generator_),noise(generator_));
-    gyro_bias_ += param_.gyro_bias_sigma * sqrt(param_.imu_timestep ) * noise_gyro_bias;
+    gyro_bias_ += param_.gyro_bias_sigma * sqrt(param_.imu_timestep ) * noise_gyro_bias;    // bias是随机游走噪声
     data.imu_gyro_bias = gyro_bias_;
 
     // acc_bias update
     Eigen::Vector3d noise_acc_bias(noise(generator_),noise(generator_),noise(generator_));
-    acc_bias_ += param_.acc_bias_sigma * sqrt(param_.imu_timestep ) * noise_acc_bias;
+    acc_bias_ += param_.acc_bias_sigma * sqrt(param_.imu_timestep ) * noise_acc_bias;       // bias是随机游走噪声
     data.imu_acc_bias = acc_bias_;
 
 }
 
+/*
+ * @input: time point 
+ * @output: 根据时间和imu参数生成的imu数据
+ * @method： 根据参数设计位置的路径和角度的变化，对路径和角度进行微分可以得到线加速度和角速度
+*/
 MotionData IMU::MotionModel(double t)
 {
 
@@ -148,14 +153,14 @@ void IMU::testImu(std::string src, std::string dist)
 
         /// 中值积分
         Eigen::Vector3d dtheta_half_tmp =  imupose.imu_gyro * dt /2.0;
-        Eigen::Quaterniond Qwb_tmp, dp_tmp;
-        dp_tmp.w() = 1;
-        dp_tmp.x() = dtheta_half_tmp.x();
-        dp_tmp.y() = dtheta_half_tmp.y();
-        dp_tmp.z() = dtheta_half_tmp.z();
-        dp_tmp.normalize();
-        Qwb_tmp = Qwb*dp_tmp;                     // k 时刻 quaterniond的预计值
-        Eigen::Vector3d acc_w = 0.5*(Qwb * (imupose_kk.imu_acc) + gw + Qwb_tmp * (imupose.imu_acc) + gw) ;  // aw = 0.5*(Rwb_kk * ( acc_body_kk - acc_bias_kk ) + gw + Rwb * ( acc_body - acc_bias ) + gw) 
+        Eigen::Quaterniond Qwb_next, dp_delta;
+        dp_delta.w() = 1;
+        dp_delta.x() = dtheta_half_tmp.x();
+        dp_delta.y() = dtheta_half_tmp.y();
+        dp_delta.z() = dtheta_half_tmp.z();
+        dp_delta.normalize();
+        Qwb_next = Qwb*dp_delta;                     // k 时刻 quaterniond的预计值
+        Eigen::Vector3d acc_w = 0.5*(Qwb * (imupose_kk.imu_acc) + gw + Qwb_next * (imupose.imu_acc) + gw) ;  // aw = 0.5*(Rwb_kk * ( acc_body_kk - acc_bias_kk ) + gw + Rwb * ( acc_body - acc_bias ) + gw) 
         Eigen::Vector3d gyro_w = 0.5 *(imupose.imu_gyro + imupose_kk.imu_gyro);
 
 
