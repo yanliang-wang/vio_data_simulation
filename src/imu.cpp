@@ -152,27 +152,21 @@ void IMU::testImu(std::string src, std::string dist)
         // Eigen::Vector3d gyro_w = imupose.imu_gyro;
 
         /// 中值积分
-        Eigen::Vector3d dtheta_half_tmp =  imupose.imu_gyro * dt /2.0;
+        Eigen::Vector3d gyro_w = 0.5 *(imupose.imu_gyro + imupose_kk.imu_gyro);
+
+        // Eigen::Vector3d dtheta_half_tmp =  imupose_kk.imu_gyro * dt /2/.0;  // 
+        Eigen::Vector3d dtheta_half_tmp =  gyro_w * dt /2/.0;  // 
         Eigen::Quaterniond Qwb_next, dp_delta;
         dp_delta.w() = 1;
         dp_delta.x() = dtheta_half_tmp.x();
         dp_delta.y() = dtheta_half_tmp.y();
         dp_delta.z() = dtheta_half_tmp.z();
         dp_delta.normalize();
-        Qwb_next = Qwb*dp_delta;                     // k 时刻 quaterniond的预计值
+        Qwb_next = Qwb*dp_delta;                     // Qwb是k-1(kk)时刻的姿态，dp_delta是k-1到k时刻的姿态变化值 k 时刻 quaterniond的预计值
         Eigen::Vector3d acc_w = 0.5*(Qwb * (imupose_kk.imu_acc) + gw + Qwb_next * (imupose.imu_acc) + gw) ;  // aw = 0.5*(Rwb_kk * ( acc_body_kk - acc_bias_kk ) + gw + Rwb * ( acc_body - acc_bias ) + gw) 
-        Eigen::Vector3d gyro_w = 0.5 *(imupose.imu_gyro + imupose_kk.imu_gyro);
 
 
-
-        Eigen::Vector3d dtheta_half =  gyro_w * dt /2.0;
-        Eigen::Quaterniond dq;
-        dq.w() = 1;
-        dq.x() = dtheta_half.x();
-        dq.y() = dtheta_half.y();
-        dq.z() = dtheta_half.z();
-        dq.normalize();
-        Qwb = Qwb * dq;
+        Qwb = Qwb_next;
         Pwb = Pwb + Vw * dt + 0.5 * dt * dt * acc_w;
         Vw = Vw + acc_w * dt;
         

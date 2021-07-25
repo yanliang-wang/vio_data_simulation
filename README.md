@@ -49,6 +49,17 @@ python_tool/：文件夹里为可视化工具，draw_points.py就是动态绘制
 
 在`imu.cpp`中的`testImu`实现中值积分（积分的目的在于根据IMU的测量数据，包括角速度和线加速度，获得不同时刻IMU在world坐标系下的位置，速度，和姿态），效果非常好
 
+## Quick Demo
+
+```bash
+cmakefull
+
+cd vio_data_simulation/
+python python_tool/draw_trajcory.py
+```
+
+
+
 原来的效果如下
 
 ![](./bin/Figure_2.png)
