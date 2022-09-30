@@ -55,7 +55,7 @@ void IMU::addIMUnoise(MotionData& data)
 
     Eigen::Vector3d noise_gyro(noise(generator_),noise(generator_),noise(generator_));
     Eigen::Matrix3d gyro_sqrt_cov = param_.gyro_noise_sigma * Eigen::Matrix3d::Identity();
-    data.imu_gyro = data.imu_gyro + gyro_sqrt_cov * noise_gyro / sqrt( param_.imu_timestep ) + gyro_bias_;
+    data.imu_gyro = data.imu_gyro + gyro_sqrt_cov * noise_gyro / sqrt( param_.imu_timestep ) + gyro_bias_; // todo: 这里为什么要除以采样时间的平方根
 
     Eigen::Vector3d noise_acc(noise(generator_),noise(generator_),noise(generator_));
     Eigen::Matrix3d acc_sqrt_cov = param_.acc_noise_sigma * Eigen::Matrix3d::Identity();
@@ -63,7 +63,7 @@ void IMU::addIMUnoise(MotionData& data)
 
     // gyro_bias update
     Eigen::Vector3d noise_gyro_bias(noise(generator_),noise(generator_),noise(generator_));
-    gyro_bias_ += param_.gyro_bias_sigma * sqrt(param_.imu_timestep ) * noise_gyro_bias;    // bias是随机游走噪声
+    gyro_bias_ += param_.gyro_bias_sigma * sqrt(param_.imu_timestep ) * noise_gyro_bias;    // bias是随机游走噪声, 它的导数是高斯白噪声 todo: 这里为什么要乘以采样时间的平方根
     data.imu_gyro_bias = gyro_bias_;
 
     // acc_bias update
@@ -148,14 +148,13 @@ void IMU::testImu(std::string src, std::string dist)
 
 
         /// imu 动力学模型 欧拉积分
-        // Eigen::Vector3d acc_w = Qwb * (imupose.imu_acc) + gw;  // aw = Rwb * ( acc_body - acc_bias ) + gw
         // Eigen::Vector3d gyro_w = imupose.imu_gyro;
-
         /// 中值积分
         Eigen::Vector3d gyro_w = 0.5 *(imupose.imu_gyro + imupose_kk.imu_gyro);
 
-        // Eigen::Vector3d dtheta_half_tmp =  imupose_kk.imu_gyro * dt /2/.0;  // 
-        Eigen::Vector3d dtheta_half_tmp =  gyro_w * dt /2/.0;  // 
+        //
+        // // Eigen::Vector3d dtheta_half_tmp =  imupose_kk.imu_gyro * dt /2/.0;  //
+        Eigen::Vector3d dtheta_half_tmp =  gyro_w * dt /2.0;  //
         Eigen::Quaterniond Qwb_next, dp_delta;
         dp_delta.w() = 1;
         dp_delta.x() = dtheta_half_tmp.x();
@@ -163,8 +162,11 @@ void IMU::testImu(std::string src, std::string dist)
         dp_delta.z() = dtheta_half_tmp.z();
         dp_delta.normalize();
         Qwb_next = Qwb*dp_delta;                     // Qwb是k-1(kk)时刻的姿态，dp_delta是k-1到k时刻的姿态变化值 k 时刻 quaterniond的预计值
-        Eigen::Vector3d acc_w = 0.5*(Qwb * (imupose_kk.imu_acc) + gw + Qwb_next * (imupose.imu_acc) + gw) ;  // aw = 0.5*(Rwb_kk * ( acc_body_kk - acc_bias_kk ) + gw + Rwb * ( acc_body - acc_bias ) + gw) 
 
+        /// imu 动力学模型 欧拉积分
+        // Eigen::Vector3d acc_w = Qwb * (imupose.imu_acc) + gw;  // aw = Rwb * ( acc_body - acc_bias ) + gw
+        /// 中值积分
+        Eigen::Vector3d acc_w = 0.5*(Qwb * (imupose_kk.imu_acc) + gw + Qwb_next * (imupose.imu_acc) + gw) ;  // aw = 0.5*(Rwb_kk * ( acc_body_kk - acc_bias_kk ) + gw + Rwb * ( acc_body - acc_bias ) + gw)
 
         Qwb = Qwb_next;
         Pwb = Pwb + Vw * dt + 0.5 * dt * dt * acc_w;
